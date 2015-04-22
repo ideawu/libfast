@@ -1,0 +1,10 @@
+*.o
+*.a
+*.out
+*.class
+.DS_Store
+*.pyc
+*.swp
+*_cpy_*
+*.dSYM*
+
