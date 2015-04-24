@@ -5,12 +5,15 @@
 #include <vector>
 
 #include "template.h"
+#include "../fix/message.h"
 
 namespace fast{
 
 class Message
 {
 public:
+	static std::string encode_fix_message(fix::Message *fix_msg, const Template &temp);
+
 	Message();
 	~Message();
 	
@@ -19,11 +22,13 @@ public:
 	}
 	void add(int64_t val, int index=-1);
 	void add(const char *val, int index=-1);
+	void add(const std::string &val, int index=-1);
 	
 	std::string encode(const Template &temp);
 private:
 	std::vector<std::string> fields_;
 	void add_encoded(int index, const std::string &str);
+	int set_fix_field(int tag, const std::string &val, const Template &temp);
 };
 
 static const unsigned char SIGN_BIT = (unsigned char)('\x40');

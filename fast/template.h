@@ -19,6 +19,7 @@ public:
 	
 	void add_field(const Field &field);
 	const Field* get_field(int index) const;
+	const Field* get_field_by_tag(int tag) const;
 	
 private:
 	std::vector<Field> fields_;

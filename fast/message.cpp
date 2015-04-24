@@ -1,4 +1,5 @@
 #include <algorithm>
+#include "../util/strings.h"
 #include "message.h"
 
 namespace fast{
@@ -7,6 +8,49 @@ Message::Message(){
 }
 
 Message::~Message(){
+}
+
+std::string Message::encode_fix_message(fix::Message *fix_msg, const Template &temp){
+	Message fast_msg;
+	
+	std::map<int, std::string>::const_iterator it;
+	for(it=fix_msg->fields.begin(); it!=fix_msg->fields.end(); it++){
+		int ret = fast_msg.set_fix_field(it->first, it->second, temp);
+	}
+
+	// call encode() to get body_len and checksum
+	std::string s = fix_msg->encode();
+	printf("%s\n", s.c_str());
+	fast_msg.set_fix_field(8, fix_msg->version(), temp);
+	fast_msg.set_fix_field(9, str(fix_msg->body_len()), temp);
+	fast_msg.set_fix_field(10, str(fix_msg->checksum()), temp);
+	return fast_msg.encode(temp);
+}
+
+int Message::set_fix_field(int tag, const std::string &val, const Template &temp){
+	const Field *field = temp.get_field_by_tag(tag);
+	if(!field){
+		printf("www\n");
+		
+		return -1;
+	}
+	switch(field->type){
+		case Field::Int:
+		case Field::Uint:{
+			//printf("set@%d tag: %d, %s\n", field->index, field->tag, val.c_str());
+			this->add(str_to_int64(val), field->index);
+			break;
+		}
+		case Field::String:{
+			//printf("set@%d tag: %d, %s\n", field->index, field->tag, val.c_str());
+			this->add(val, field->index);
+			break;
+		}
+		default:
+			return -1;
+			break;
+	}
+	return 0;
 }
 
 void Message::add_encoded(int index, const std::string &str){
@@ -20,11 +64,21 @@ void Message::add_encoded(int index, const std::string &str){
 }
 
 void Message::add(int64_t val, int index){
+	//printf("add %d\n", (int)val);
 	std::string bin((char *)&val, sizeof(val));
+	//printf("add '%s'\n", str_escape(bin).c_str());
 	this->add_encoded(index, bin);
 }
 
 void Message::add(const char *val, int index){
+	std::string bin(val);
+	if(bin.empty()){ // 空字符串也要占用一个字节
+		bin.push_back('\0');
+	}
+	this->add_encoded(index, bin);
+}
+
+void Message::add(const std::string &val, int index){
 	std::string bin(val);
 	if(bin.empty()){ // 空字符串也要占用一个字节
 		bin.push_back('\0');
@@ -47,6 +101,10 @@ static std::string encode_field_val(const Field *field, const std::string &bin){
 					}
 					buffer.append(encode_val(num));
 				}else{
+					if(field->tag == 34){
+						printf("decode '%s'\n", str_escape(bin).c_str());
+						printf("encode tag: %d, %d\n", field->tag, (int)num);
+					}
 					buffer.append(encode_val((uint64_t)num));
 				}
 			}else{

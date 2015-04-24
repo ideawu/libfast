@@ -17,67 +17,21 @@
 
 #include "message.h"
 
-
-#pragma pack(push, 1)
+//#pragma pack(push, 1)
+#pragma pack(1)
 struct tagFASTHeader
 {
-    char magic[4];        // equ g_pszMagic
+    char magic[4];
     char type[4];     
     char space[2];
     unsigned int len; 
 };
-#pragma pack(pop)
+#pragma pack()
+//#pragma pack(pop)
 
 
-int main(int argc, char **argv){
-	fast::Template temp(90001);
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Mandatory, fast::Field::Constant));
-	temp.add_field(fast::Field(fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::Uint, fast::Field::Mandatory, fast::Field::Increment));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
-	temp.add_field(fast::Field(fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
-
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Optional, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Optional, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Optional, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Optional, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::String, fast::Field::Mandatory, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
-	temp.add_field(fast::Field(fast::Field::Uint, fast::Field::Optional, fast::Field::Noop));
-	
-	// 8=FIX.4.2|9=117|35=A|49=CLIENT08|56=SERVER|34=1|52=20150421-21:20:56.000|98=0|108=1600|96=H::135790:|95=10|141=Y|553=|554=|383=99999|10=068|
-	fast::Message msg;
-	
-	
-#if 1
-	msg.add("FIX.4.2");
-	msg.add(99);
-	msg.add(1);
-	msg.add("A");
-	msg.add("CLIENT06");
-	msg.add("20150423-07:01:35.995");
-	
-	msg.add("SERVER");
-	msg.add(33); // checksum
-	msg.add("H:12345678:12345678:");
-	msg.add("");
-	msg.add("");
-	msg.add("");
-	msg.add(0);
-
-	msg.add("Y");
-	msg.add(20);
-	msg.add(0);
-#else
-	msg.set_template(1);
-	msg.add("HelloWorld");
-#endif
-	
-	std::string fast_msg = msg.encode(temp);
+void send_msg(int sock, fix::Message &msg){
+	std::string fast_msg = fast::Message::encode_fix_message(&msg, temp);
 	for(int i=0; i<(int)(fast_msg.size()); i++){
 		printf("%02x", (unsigned char)fast_msg[i]);
 		if(i % 2 == 1){
@@ -90,8 +44,34 @@ int main(int argc, char **argv){
 			printf("\n");
 		}
 	}
+	
+	tagFASTHeader header;
+	strcpy(header.magic, "FaSt");
+	strcpy(header.type,  "A");
+	strcpy(header.space, "ki");
+	header.len = fast_msg.size();
 
+	unsigned char *p = (unsigned char *)&header;
+	for(int i=0; i<sizeof(header); i++){
+		printf("%02x", (unsigned char)p[i]);
+		if(i % 2 == 1){
+			printf(" ");
+		}
+		if(i % 16 == 15){
+			printf("\n");
+		}
+	}
+	printf("\n");
+	
+	int ret;
 
+	ret = write(sock, &header, sizeof(header));
+	printf("send: %d\n", ret);
+	ret = write(sock, fast_msg.data(), fast_msg.size());
+	printf("send: %d\n", ret);
+}
+
+int main(int argc, char **argv){
 	int sock;
 	const char *ip = "";
 	int port = 8876;
@@ -108,22 +88,83 @@ int main(int argc, char **argv){
 		printf("%d: error\n", __LINE__);
 	}
 	
-	tagFASTHeader header;
-	strcpy(header.magic, "FaSt");
-	strcpy(header.type, "A");
-	strcpy(header.space, "ki");
-	header.len = fast_msg.size();
+	{
+		fast::Template temp(90001);
+		temp.add_field(fast::Field(8, fast::Field::String, fast::Field::Mandatory, fast::Field::Constant));
+		temp.add_field(fast::Field(9, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(34, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Increment));
+		temp.add_field(fast::Field(35, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(49, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(52, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(56, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(10, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+
+		temp.add_field(fast::Field(96, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(95, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(553, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(554, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(98, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(141, fast::Field::String, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(108, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(383, fast::Field::Uint, fast::Field::Optional, fast::Field::Noop));
+
+		fix::Message msg;
+		msg.set(34, 1);
+		msg.set(35, "A");
+		msg.set(49, "CLIENT06");
+		msg.set(56, "SERVER");
+		msg.set(52, "20150424-03:06:59.114");
+		msg.set(96, "H:12345678:12345678:");
+		msg.set(98, 0);
+		msg.set(141, "Y");
+		msg.set(108, 20);
+		send_msg(sock, msg);
+	}
 	
-	int ret;
-	ret = write(sock, &header, sizeof(header));
-	printf("send: %d\n", ret);
-	ret = write(sock, fast_msg.data(), fast_msg.size());
-	printf("send: %d\n", ret);
+	{
+		/*
+		fast::Template temp(90100);
+		temp.add_field(fast::Field(8, fast::Field::String, fast::Field::Mandatory, fast::Field::Constant));
+		temp.add_field(fast::Field(9, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(34, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Increment));
+		temp.add_field(fast::Field(35, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(49, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(52, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(56, fast::Field::String, fast::Field::Mandatory, fast::Field::Copy));
+		temp.add_field(fast::Field(10, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+
+		temp.add_field(fast::Field(262, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(263, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(264, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(265, fast::Field::String, fast::Field::Optional, fast::Field::Noop));
+		temp.add_field(fast::Field(266, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(267, fast::Field::String, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(269, fast::Field::Uint, fast::Field::Mandatory, fast::Field::Noop));
+		temp.add_field(fast::Field(383, fast::Field::Uint, fast::Field::Optional, fast::Field::Noop));
+	// 8=FIX.4.29=12735=V34=249=CLIENT0652=20150424-03:02:12.12656=SERVER1 46=2 55=600446 207=SS 55=000001 207=SZ 262=1 263=1 264=0 267=1 269=0 10=005
+		fix::Message msg;
+		msg.set(34, 1);
+		msg.set(35, "V");
+		msg.set(49, "CLIENT06");
+		msg.set(56, "SERVER");
+		msg.set(52, "20150424-03:22:59.114");
+		send_msg(sock, msg);
+		*/
+	}
 	
-	char recv_buf[8192];
-	ret = ::read(sock, recv_buf, 8192);
-	printf("recv: %d\n", ret);
-	printf("error: %s\n", strerror(errno));
+	while(1){
+		char recv_buf[8192];
+		ret = read(sock, recv_buf, 8192);
+		if(ret == 0){
+			printf("connection closed\n");
+			break;
+		}
+		printf("recv: %d\n", ret);
+		if(ret == -1){
+			printf("error: %s\n", strerror(errno));
+		}
+		sleep(1);
+	}
 	
 	return 0;
 }

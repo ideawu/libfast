@@ -1,6 +1,8 @@
 #ifndef FAST_FIELD_H_
 #define FAST_FIELD_H_
 
+#include <string>
+
 namespace fast{
 
 class Field
@@ -27,12 +29,17 @@ public:
 	}Type;
 
 public:
+	int index;
 	Type type;
 	Presence pr;
 	Operator op;
+	int tag;
+	std::string init_val;
+	
+	std::string last_val;
 
 	Field();
-	Field(Type type, Presence pr, Operator op=Noop);
+	Field(int tag, Type type, Presence pr, Operator op=Noop);
 };
 
 }; // end namespace fast
