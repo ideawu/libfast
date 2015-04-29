@@ -14,11 +14,15 @@ public:
 	Message();
 	~Message();
 	
+	void reset(){
+		fields.clear();
+	}
 	void set(int tag, int32_t val){
 		set(tag, (int64_t)val);
 	}
 	void set(int tag, int64_t val);
 	void set(int tag, const char *val);
+	void set(int tag, const std::string &val);
 	const std::string* get(int tag) const;
 	
 	std::string encode();
@@ -40,6 +44,6 @@ private:
 	static std::string default_version;
 };
 
-}; // end namespace fix
+}; // namespace fix
 
 #endif

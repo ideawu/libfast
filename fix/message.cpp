@@ -1,5 +1,5 @@
 #include "../util/strings.h"
-#include "message.h"
+#include "fix.h"
 
 namespace fix{
 
@@ -23,6 +23,10 @@ void Message::set(int tag, const char *val){
 	fields[tag] = str(val);
 }
 
+void Message::set(int tag, const std::string &val){
+	fields[tag] = val;
+}
+
 const std::string* Message::get(int tag) const{
 	std::map<int, std::string>::const_iterator it;
 	it = fields.find(tag);
@@ -35,9 +39,9 @@ const std::string* Message::get(int tag) const{
 static std::string encode_field(int tag, const std::string &val){
 	std::string buffer;
 	buffer.append(str(tag));
-	buffer.push_back('=');
+	buffer.push_back(fix::SEPARATE_BYTE);
 	buffer.append(val);
-	buffer.push_back('\x01');
+	buffer.push_back(fix::STOP_BYTE);
 	return buffer;
 }
 
@@ -76,4 +80,4 @@ std::string Message::encode(){
 	return header + buffer;
 }
 
-}; // end namespace fix
+}; // namespace fix

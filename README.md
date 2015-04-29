@@ -1,5 +1,7 @@
 # libfix
 
+Libfix 只包含 FIX 报文的封包和解析, 不包括会话管理和网络层相关的内容. 你用自己喜欢的方式, 从网络或者文件读取数据, 用 libfix 来解析. 当你想给网络对端发送数据, 或者想网文件中写入数据时, 用 libfix 来序列化.
+
 	#include "fix/message.h"
 	
 	int main(int argc, char **argv){

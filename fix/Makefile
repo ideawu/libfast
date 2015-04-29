@@ -1,5 +1,5 @@
 CFLAGS=
-OBJS = message.o
+OBJS = message.o decoder.o
 CXX=g++
 
 all: $(OBJS)
