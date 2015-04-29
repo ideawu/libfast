@@ -34,13 +34,21 @@ public:
 	int checksum(){
 		return checksum_;
 	}
+	void set_version(const std::string version){
+		_version = version;
+	}
 	std::string version() const{
-		return Message::default_version;
+		if(_version.empty()){
+			return Message::default_version;
+		}else{
+			return _version;
+		}
 	}
 
 private:
 	int body_len_;
 	int checksum_;
+	std::string _version;
 	static std::string default_version;
 };
 

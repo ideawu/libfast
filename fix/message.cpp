@@ -59,7 +59,7 @@ std::string Message::encode(){
 	body_len_ = (int)buffer.size();
 
 	std::string header;
-	header.append(encode_field(8, Message::default_version));
+	header.append(encode_field(8, this->version()));
 	header.append(encode_field(9, str(body_len_)));
 	
 	checksum_ = 0;
