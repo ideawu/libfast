@@ -6,6 +6,10 @@ found in the LICENSE file.
 #ifndef UTIL_STRING_H
 #define UTIL_STRING_H
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
